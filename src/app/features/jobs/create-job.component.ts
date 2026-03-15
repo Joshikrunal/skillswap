@@ -29,7 +29,9 @@ import { ToastService } from '../../core/services/toast.service';
         <div class="alert error">{{ errorMessage }}</div>
       }
 
-      <button class="btn w-full mt-16" [disabled]="form.invalid">Create Job</button>
+      <button class="btn w-full mt-16" [disabled]="form.invalid || loading">
+        {{ loading ? 'Creating Job...' : 'Create Job' }}
+      </button>
     </form>
   `
 })
@@ -39,6 +41,7 @@ export class CreateJobComponent {
   private router = inject(Router);
   private toast = inject(ToastService);
 
+  loading = false;
   errorMessage = '';
 
   readonly form = this.fb.nonNullable.group({
@@ -51,13 +54,20 @@ export class CreateJobComponent {
   submit(): void {
     if (this.form.invalid) return;
 
+    this.loading = true;
+    this.errorMessage = '';
+
     this.jobsService.createJob(this.form.getRawValue()).subscribe({
-      next: (res) => {
-        this.toast.show('Job posted successfully', 'success');
-        this.router.navigate(['/jobs', res.id]);
+      next: () => {
+        this.toast.show('Job created successfully', 'success');
+        this.router.navigate(['/jobs']);
       },
       error: (err) => {
         this.errorMessage = err?.error?.error || 'Could not create job';
+        this.loading = false;
+      },
+      complete: () => {
+        this.loading = false;
       }
     });
   }

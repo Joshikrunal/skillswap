@@ -13,7 +13,7 @@ import { EmptyStateComponent } from '../../shared/empty-state/empty-state.compon
   template: `
     <div class="page-header">
       <h2>Explore Jobs</h2>
-      <p class="muted">Search jobs from the real API using filters.</p>
+      <p class="muted">Browse live jobs from the API and open full details.</p>
     </div>
 
     <div class="card filters-grid">
@@ -33,7 +33,10 @@ import { EmptyStateComponent } from '../../shared/empty-state/empty-state.compon
     @if (loading) {
       <app-loading-spinner />
     } @else if (!jobs.length) {
-      <app-empty-state title="No jobs found" message="Try changing the search filters." />
+      <app-empty-state
+        title="No jobs found"
+        message="Try changing your filters to see more results."
+      />
     } @else {
       <div class="job-grid mt-24">
         @for (job of jobs; track trackByJob(job)) {
@@ -46,11 +49,16 @@ import { EmptyStateComponent } from '../../shared/empty-state/empty-state.compon
             </div>
 
             <h3>{{ job.title }}</h3>
-            <p>{{ job.description }}</p>
+
+            <p>
+              {{ (job.description || 'No description available').length > 120
+                ? (job.description | slice:0:120) + '...'
+                : (job.description || 'No description available') }}
+            </p>
 
             <div class="job-meta">
-              <span>\${{ job.budget || 0 }}</span>
-              <span>Job #{{ getJobId(job) }}</span>
+              <span class="job-budget">\${{ job.budget || 0 }}</span>
+              <span class="job-id">Job #{{ getJobId(job) }}</span>
             </div>
 
             @if (getJobId(job)) {
@@ -99,14 +107,16 @@ export class JobsListComponent {
       payload.category = this.filters.category.trim();
     }
 
-    if (this.filters.min_budget !== null && this.filters.min_budget !== undefined && this.filters.min_budget !== 0) {
+    if (
+      this.filters.min_budget !== null &&
+      this.filters.min_budget !== undefined &&
+      this.filters.min_budget !== 0
+    ) {
       payload.min_budget = Number(this.filters.min_budget);
     }
 
     this.jobsService.searchJobs(payload).subscribe({
       next: (res: any) => {
-        console.log('Jobs API response:', res);
-
         const rawJobs = Array.isArray(res) ? res : [];
 
         this.jobs = rawJobs.map((job: any) => ({
